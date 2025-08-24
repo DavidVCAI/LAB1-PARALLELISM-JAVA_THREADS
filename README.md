@@ -1,11 +1,21 @@
-Integrantes: Jesus Pinzon y David Velasquez
+# 🧵 Multithreading Laboratory - Blacklist Validator
 
-Desarrollo del laboratorio 1.
+## 👥 **Team Members**
+- [Jesús Alfonso Pinzón Vega](https://github.com/JAPV-X2612)
+- [David Felipe Velásquez Contreras](https://github.com/DavidVCAI)
+---
 
-Se instalan las dependencias de java y mvn desde los sitios oficiales, añadiendolos a las variables de entorno para poder utilizarlas.
+## 🚀 **Laboratory 1 Development**
 
-En primer lugar añadimos esta parte en el pom para ejecutar facilmente el proyecto con mvn:
+### 📋 **Prerequisites & Setup**
 
+**Java** and **Maven** dependencies were installed from official sources and added to environment variables for proper utilization.
+
+#### 🔧 **Maven Configuration**
+
+To easily execute the project with `mvn`, we added the following configuration to the `pom.xml`:
+
+```xml
 <build>
     <plugins>
         <plugin>
@@ -18,101 +28,202 @@ En primer lugar añadimos esta parte en el pom para ejecutar facilmente el proye
         </plugin>
     </plugins>
 </build>
+```
 
-Asi con el comando mvn clean compile exec:java se ejecuta el limpiado, compilado y ejecucion de Main.
+#### ⚡ **Quick Execution Command**
 
+Use the following command to clean, compile, and execute the Main class:
 
-Punto 1.
+```bash
+mvn clean compile exec:java
+```
 
-Vamos a implementar las clases the threads y probar las diferencias. Se realiza entonces el codigo de clase que va a extender Thread, esta nos muestra en consola la ejecucion de un hilo en especifico, la clase CountThread que define hilos en un rango inclusivo.
+---
 
-Luego de esto se implementa la clase principal que va a crear los hilos y probar las diferencias entre ejecutarlos con start() y con run(). Pusimos ciertos logs para ver que tanto se demora en milisegundos y se imprime bien las ejecuciones, dandonos buenos insights de lo que estamos haciendo.
+## 🎯 **Part 1: Thread Implementation & Testing**
 
-Luego de ello debemos correr mvn compile para compilar el projecto. 
+### 📝 **Objective**
+Implement thread classes and analyze the differences between execution methods.
 
-<img src="assets/images/image-0.png" alt="Build Proyect" width="70%">
+### 🔨 **Implementation Details**
 
-Y dado eso podemos correrlo directamente con java, por ejemplo con este comando:
+We developed the **CountThread** class that extends `Thread`, which:
+  - Displays specific thread execution in console
+  - Defines threads within an inclusive range
+  - Provides execution insights through logging
 
-"java -cp target/classes edu.eci.arsw.threads.CountThreadsMain"
+#### 🧪 **Testing Methodology**
+
+The main class creates threads and tests differences between:
+  - **`start()`** method execution
+  - **`run()`** method execution
+
+Logging mechanisms track execution time in milliseconds for performance analysis.
+
+### 🏗️ **Build Process**
+
+First, compile the project:
+
+```bash
+mvn compile
+```
+
+<img src="assets/images/image-0.png" alt="Build Project" width="70%">
+
+### ▶️ **Execution Examples**
+
+Execute directly with **Java**:
+
+```bash
+java -cp target/classes edu.eci.arsw.threads.CountThreadsMain
+```
+
+#### 🔄 **Concurrent Execution with `start()`**
 
 <img src="assets/images/image-1.png" alt="Threads Execution with start()" width="70%">
 
-Lo que podemos ver es que corriendo con start los hilos se ejecutan de manera concurrente.
+*Result*: Threads execute **concurrently** when using `start()`.
+
+#### 📋 **Sequential Execution with `run()`**
 
 <img src="assets/images/image-2.png" alt="Threads Execution with run()" width="40%">
 
-Y vemos que con run() los hilos se ejecutan en el principal, casi como si estuvieramos corriendo codigo normal.
+*Result*: Threads execute **sequentially** in the main thread when using `run()`.
 
-Entonces lo que podemos concluir de este primer ejercicio es que start crea un nuevo hilo de ejecucion, y según entendemos este automáticamente llama al metodo run(), que se puede ver en la librería:
+### 🧠 **Key Insights & Analysis**
+
+#### **`start()` Method:**
+- ✅ Creates a **new execution thread**
+- ✅ Automatically calls the `run()` method
+- ✅ Enables true **concurrency/parallelism**
+
+#### **`run()` Method:**
+- ❌ Does **not** create a new thread
+- ❌ Executes in the **current thread**
+- ❌ Behaves like a **normal method call**
 
 <img src="assets/images/image-3.png" alt="Runnable Interface" width="70%">
 
-Eso significa que run no crea un nuevo hilo sino que ejecuta en el hilo en el que esta, como llamar un metodo de forma normal. Vemos como Thread.join() hace que se espere a los otros hilos para que el programa no termine antes que los demas. Esto nos muestra que tenemos una concurrencia o paralelismo real cuando utilizamos start() y hacemos que los hilos corran al tiempo, que sea paralelismo o concurrencia depende de que tantos nucleos tenemos.
+#### 🔗 **Thread Synchronization**
 
+**`Thread.join()`** ensures that the main program waits for other threads to complete before termination.
 
-Punto 2 
+> **Note**: Whether we achieve *parallelism* or *concurrency* depends on the number of available CPU cores.
 
-Al haber ejecutado main con mvn clean compile exec:java vemos que tenemos 80000 listas negras
+---
+
+## 🛡️ **Part 2: Blacklist Validation Parallelization**
+
+### 📊 **Initial Analysis**
+
+After executing `mvn clean compile exec:java`, we observed **80,000 blacklists** to process:
 
 <img src="assets/images/image-4.png" alt="BlackListSearch Execution" width="70%">
 
-En base a esto implementamos la paralelización del algoritmo de búsqueda de blacklists, con ello vamosa a dividir el trabajo de revisar las 80,000 listas negras entre múltiples hilos para aprovechar el paralelismo. Empezamos creando la clase BlackListSearchThread
+### 🎯 **Parallelization Strategy**
 
-Primero creamos una clase que extiende Thread y lo que hace es buscar en un segmento específico de las listas negras.
+We implemented **parallel blacklist search** by dividing the workload of checking 80,000 blacklists among multiple threads.
 
-Luego modificamos la clase de HostBlackListsValidator
+#### 🏗️ **Implementation Architecture**
 
-Agregamos un nuevo método checkHost(String ipaddress, int N) que implementa la búsqueda paralela de la siguiente forma:
+##### 1️⃣ **BlackListSearchThread Class**
+- **Extends**: `Thread`
+- **Function**: Searches specific blacklist segments
+- **Scope**: Individual thread workload management
 
+##### 2️⃣ **HostBlackListsValidator Modification**
+- **New Method**: `checkHost(String ipaddress, int N)`
+- **Implementation**: Parallel search algorithm
 
-- Se calcula el tamaño del segmento: segmentSize = totalServers / N
-- Manejamos el resto: remainder = totalServers % N
-- Distribuimos los servidores que quedan entre los primeros hilos
+#### ⚙️ **Algorithm Details**
 
+```java
+// Segment calculation
+int segmentSize = totalServers / N;
+int remainder = totalServers % N;
 
-Para poder sincronizar bien hacemos lo siguiente:
-- Utilizamos thread.join() para esperar que todos los hilos terminen
-- Recopilamos los resultados de cada hilo después de que terminan
-- Mantenemos el LOG original que muestra las listas revisadas vs total
+// Distribute remaining servers among first threads
+```
 
-Luego de ejecutar la nueva clase que prueba el paralelismo podemos ver algunos insights que son los siguientes:
+#### 🔄 **Synchronization Strategy**
+- **`thread.join()`**: Wait for all threads to complete
+- **Result collection**: Gather results after thread completion
+- **Logging**: Maintain original LOG showing reviewed vs total lists
 
+### 🧪 **Performance Testing**
+
+Execute the parallel implementation:
+
+```bash
 java -cp target/classes edu.eci.arsw.blacklistvalidator.ParallelMain
+```
 
-Test 1 - IP IP no tan dispersa 200.24.34.55
-- Con 4 hilos fueron mas o menos 27 segundos
-- Encontradas en: [23, 50, 200, 500, 1000]
-- Resultado: NO CONFIABLE (5 ocurrencias)
+#### 📈 **Test Results**
 
-Test 2 - IP mas dispersa (202.24.34.55):
-- Con 4 hilos aprox 25 segundos  
-- Encontradas en: [29, 10034, 20200, 31000, 70500]
-- Resultado: NO CONFIABLE (5 ocurrencias)
-- Pudimos ver que los hilos ven diferentes ocurrencias dependiendo de su segmento
+##### **Test 1** - *Less Dispersed IP* (`200.24.34.55`)
+- **Threads**: 4
+- **Execution Time**: ~27 seconds
+- **Found in**: [23, 50, 200, 500, 1000]
+- **Result**: <u>**NOT RELIABLE**</u> (5 occurrences)
 
-Test 3 - IP que no esta en listas (212.24.24.55):
-- Con 4 hilos fueron como 25 segundos
-- Encontradas en: []
-- Resultado: CONFIABLE (0 ocurrencias)
+##### **Test 2** - *More Dispersed IP* (`202.24.34.55`)
+- **Threads**: 4  
+- **Execution Time**: ~25 seconds
+- **Found in**: [29, 10034, 20200, 31000, 70500]
+- **Result**: <u>**NOT RELIABLE**</u> (5 occurrences)
+- **Observation**: Different threads detect different occurrences based on their segments
 
-Si tomamos el peor caso que es la mas dispersa (202.24.34.55), podemos ver algunas cosas respecto al rendimiento:
+##### **Test 3** - *Clean IP* (`212.24.24.55`)
+- **Threads**: 4
+- **Execution Time**: ~25 seconds
+- **Found in**: []
+- **Result**: <u>**RELIABLE**</u> (0 occurrences)
 
-1 hilo: 115,219 ms (~115 segundos)
-2 hilos: 51,285 ms (~51 segundos) - Mejora del 55%
-4 hilos: 25,432 ms (~25 segundos) - Mejora del 78% 
-8 hilos: 13,460 ms (~13 segundos) - Mejora del 88%
+### 📊 **Performance Scaling Analysis**
 
-Por ejemplo aqui estan los logs de la busqueda de 8 hilos
+Using the worst-case scenario (*most dispersed IP*: `202.24.34.55`):
+
+| **Threads** | **Execution Time** | **Performance Improvement** |
+|:-----------:|:-----------------:|:---------------------------:|
+| 1 thread    | 115,219 ms (~115s) | Baseline                   |
+| 2 threads   | 51,285 ms (~51s)   | **55% improvement** ✨     |
+| 4 threads   | 25,432 ms (~25s)   | **78% improvement** 🚀     |
+| 8 threads   | 13,460 ms (~13s)   | **88% improvement** ⚡     |
+
+#### 🖥️ **8-Thread Execution Logs**
 
 <img src="assets/images/image-5.png" alt="8 Thread Search Logs" width="70%">
 
-Conclusiones:
+---
 
-1. La paralelizacion funciona ya que se logra una reduccion en el tiempo de ejecución
-2. Al duplicar hilos aproximadamente se reduce el tiempo a la mitad.
-3. Los resultados se agregan bien al final osea que se sincronizaron bien
+## 📋 **Conclusions & Analysis**
 
-Lo que hicimos nos muestra que el problema de este punto es vergonzosamente paralelo ya que no hay dependencias entre los segmentos y cada hilo puede trabajar bien en su segmento asignado. Los logs nos muestran una mejora considerable en el rendimiento al aprovechar los varios nucleos del procesador.
+### ✅ **Key Achievements**
 
-2.1 Avance: Vemos que el tiempo de ejecucion no cambia mucho sin importar el caso de uso, lo que nos dice que estamos revisando todos los servidores sin importar que, suponemos que debemos utilizar una manera en la que si un hilo "termina" de alguna forma avisemos a los demas que deben terminar, haciendo que los casos por ejemplo donde no es tan disperso, se ejecuten mucho mas rapido.
+1. **Parallelization Success**: Achieved significant execution time reduction
+2. **Scalability**: Doubling threads approximately halves execution time
+3. **Synchronization**: Results properly aggregated at completion
+4. **Embarrassingly Parallel Problem**: No dependencies between segments allow independent thread operation
+
+### 🎯 **Performance Insights**
+
+- **Linear Scaling**: Performance improvement scales linearly with thread count
+- **CPU Utilization**: Effectively leverages multiple processor cores
+- **Workload Distribution**: Each thread efficiently processes its assigned segment
+
+### 🔍 **2.1 Future Improvements**
+
+**Current Challenge**: Execution time remains relatively constant regardless of use case, indicating all servers are being checked regardless of early findings.
+
+**Proposed Solution**: Implement an **early termination mechanism** where:
+  - Threads can signal completion to other threads
+  - **Faster execution** for less dispersed cases
+  - **Optimized resource utilization**
+
+---
+
+## 🔗 **Additional Resources**
+
+- [Maven Exec Plugin Documentation](https://www.mojohaus.org/exec-maven-plugin/)
+- [Java Threading Tutorial](https://docs.oracle.com/javase/tutorial/essential/concurrency/)
+- [Parallel Computing Concepts](https://en.wikipedia.org/wiki/Parallel_computing)
