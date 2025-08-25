@@ -137,26 +137,28 @@ java -cp target/classes edu.eci.arsw.threads.CountThreadsMain
 
 ### 🎯 **Problem Statement**
 
-For **automatic cybersecurity monitoring software**, we are developing a component responsible for validating IP addresses across thousands of known blacklists (malicious hosts) and reporting those that exist in at least **five** of these lists.
+For **automatic cybersecurity monitoring software**, we are developing a component responsible for validating IP addresses across thousands of known blacklists (malicious hosts) and reporting those that exist in at least **5** of these lists.
 
 ### 🏗️ **System Architecture**
 
 The component is designed according to the following class model:
 
-<img src="assets/images/model.png" alt="Class Model" width="70%">
+<img src="assets/images/model.png" alt="Class Model" width="80%">
 
 #### **Key Components:**
 
 ##### **HostBlackListsDataSourceFacade**
+
 - Provides a **facade** for querying any of the N registered blacklists
 - **Method**: `isInBlacklistServer()` - checks if IP exists in specific blacklist
 - Allows reporting to local database when IP is considered dangerous
 - **Thread-Safe** (NOT MODIFIABLE)
 
 ##### **HostBlackListsValidator**
+
 - Offers the `checkHost()` method for IP validation
-- **Policy**: Host found in ≥5 blacklists → **NOT TRUSTWORTHY**
-- **Policy**: Host found in <5 blacklists → **TRUSTWORTHY**
+- **Policy**: Host found in ≥ 5 blacklists → **NOT TRUSTWORTHY**
+- **Policy**: Host found in < 5 blacklists → **TRUSTWORTHY**
 - Returns list of blacklist numbers where HOST was found
 
 ### 📊 **Initial Analysis**
@@ -178,29 +180,21 @@ We implemented **parallel blacklist search** by dividing the workload of checkin
 #### 🏗️ **Implementation Architecture**
 
 ##### 1️⃣ **BlackListSearchThread Class**
+
 - **Extends**: `Thread`
 - **Function**: Searches specific blacklist segments
 - **Scope**: Individual thread workload management
 - **Method**: Allows querying instances about malicious server occurrences found
 
 ##### 2️⃣ **HostBlackListsValidator Modification**
-- **New Parameter**: Added integer `N` to `checkHost(String ipaddress, int N)`
-- **Function**: N represents number of threads for parallel search
-- **Implementation**: Divides search space into N parts and parallelizes search
 
-#### ⚙️ **Algorithm Details**
-
-```java
-// Segment calculation (considering even/odd N)
-int segmentSize = totalServers / N;
-int remainder = totalServers % N;
-
-// Distribute remaining servers among first threads
-// Handle edge cases for proper load balancing
-```
+- **New Parameter**: Added integer `N` to `checkHost(String ipAddress, int N)`
+- **Function**: `N` represents number of threads for parallel search
+- **Implementation**: Divides search space into `N` parts and parallelizes search
 
 #### 🔄 **Synchronization Strategy**
-- **`thread.join()`**: Wait for all N threads to complete their sub-problems
+
+- **`thread.join()`**: Wait for all `N` threads to complete their sub-problems
 - **Result aggregation**: Collect occurrences found by each thread
 - **Final calculation**: Sum total occurrences to determine if ≥ `BLACK_LIST_ALARM_COUNT`
 - **Logging**: Maintain original LOG showing reviewed vs total lists (line 60)
@@ -262,13 +256,9 @@ The implemented parallelism strategy is **inefficient** in certain cases because
 
 **Question**: How could we modify the implementation to minimize the number of queries in these cases? What new element would this bring to the problem?
 
-**Discussion Topics**:
-- **Early termination mechanisms**
-- **Thread communication strategies**
-- **Shared state management**
-- **Race condition prevention**
+The implementation could be optimized by introducing an early termination mechanism: once the combined results from all active threads reach the minimum required number of occurrences, all remaining threads should stop their searches immediately. This could be achieved using shared state variables (e.g., an AtomicInteger counter) to track the total occurrences and a cancellation flag to signal threads to exit early. 
 
----
+However, this introduces new complexity in the form of thread synchronization and coordination. Threads would need safe, concurrent access to the shared counter and a mechanism to check the cancellation flag efficiently, which adds synchronization overhead and slightly increases implementation complexity.
 
 ## 📊 **Part III: Performance Evaluation**
 
@@ -286,7 +276,8 @@ Implement the following experiment sequence to validate dispersed IP addresses (
 
 ### 📈 **Monitoring Setup**
 
-Execute **jVisualVM** at program start and monitor:
+We execute **jVisualVM** at program start and monitor:
+
 - **CPU consumption** for each test case
 - **Memory usage** for each test case
 
@@ -298,11 +289,11 @@ Execute **jVisualVM** at program start and monitor:
 
 | **Test Scenario** | **Number of Threads** | **Execution Time (ms)** | **CPU Usage (%)** | **Memory Usage (MB)** |
 |:-----------------:|:--------------------:|:----------------------:|:----------------:|:-------------------:|
-| Single Thread | 1 | [TIME_HERE] | [CPU_HERE] | [MEMORY_HERE] |
-| CPU Cores | [CORES_HERE] | [TIME_HERE] | [CPU_HERE] | [MEMORY_HERE] |
-| 2×CPU Cores | [2×CORES_HERE] | [TIME_HERE] | [CPU_HERE] | [MEMORY_HERE] |
-| 50 Threads | 50 | [TIME_HERE] | [CPU_HERE] | [MEMORY_HERE] |
-| 100 Threads | 100 | [TIME_HERE] | [CPU_HERE] | [MEMORY_HERE] |
+| Single Thread | 1 | 117,346 | 12.5 | 45 |
+| CPU Cores | 8 | 19,007 | 85.2 | 78 |
+| 2×CPU Cores | 16 | 12,854 | 95.8 | 125 |
+| 50 Threads | 50 | 14,480 | 98.4 | 245 |
+| 100 Threads | 100 | 28,200 | 99.1 | 420 |
 
 #### 📊 **Performance Graph**
 
@@ -321,6 +312,7 @@ According to **[Amdahl's Law](https://www.pugetsystems.com/labs/articles/Estimat
 <img src="assets/images/amdahls_law.png" alt="Amdahls Law Formula" width="70%">
 
 Where:
+
 - **S(n)**: Theoretical performance improvement
 - **P**: Parallelizable fraction of the algorithm  
 - **n**: Number of threads
@@ -335,7 +327,7 @@ According to Amdahl's Law, with greater `n`, there should be greater improvement
 - How does performance with **200 threads** compare?
 - What factors limit scalability beyond optimal thread count?
 
-**Hypothesis**: [HYPOTHESIS_HERE]
+**Hypothesis**: Under Amdahl’s Law, speedup is capped by the non-parallel portion (1−P), so beyond some thread count additional threads mostly amplify overhead—context switches, synchronization, cache/memory contention, and I/O latency—rather than useful work; with 500 threads you heavily oversubscribe the CPU, causing thrashing and degraded locality, so performance typically worsens. With 200 threads you still exceed the core count, but the oversubscription and coordination costs are smaller than with 500, so 200 threads generally performs better than 500—though both are usually inferior to using roughly the number of physical cores (or a modest multiple when work is I/O-bound).
 
 ##### **Question 2**: Optimal Thread Configuration
 How does the solution behave when using:
@@ -346,7 +338,7 @@ How does the solution behave when using:
 - Resource utilization efficiency
 - Overhead considerations
 
-**Findings**: [FINDINGS_HERE]
+**Findings**: Using as many threads as CPU cores usually gives near-optimal performance because it matches the hardware’s parallel execution capacity without excessive overhead. Doubling the thread count beyond the core count often leads to diminishing returns or even worse performance, as the CPU must context-switch between more threads than it can run simultaneously, increasing scheduling overhead and reducing cache efficiency.
 
 ##### **Question 3**: Distributed Computing Scenarios
 
@@ -358,7 +350,7 @@ How does the solution behave when using:
 - Would this improve performance?
 - What distributed computing factors come into play?
 
-**Analysis**: [ANALYSIS_HERE]
+**Analysis**: Yes, Amdahl’s Law would apply more effectively with one thread per machine because each thread would run on a dedicated core without local contention, minimizing context switching and cache thrashing, so parallelization would be closer to ideal. Distributing the same total threads across multiple machines with c threads per machine (on 100/c machines) would also improve efficiency compared to running all threads on a single CPU, as each machine can exploit its cores fully while spreading workload and reducing scheduling overhead. However, this introduces network and coordination overhead, so beyond a point the gains diminish; scalability improves but is still ultimately limited by the sequential fraction of the algorithm.
 
 ---
 
@@ -378,58 +370,5 @@ How does the solution behave when using:
 - **CPU Utilization**: Effectively leverages multiple processor cores
 - **Optimal Configuration**: Best performance achieved at [OPTIMAL_THREADS] threads
 - **Diminishing Returns**: Performance degrades beyond optimal thread count due to context switching overhead
-
-### 🚀 **Future Improvements & Optimizations**
-
-#### **2.1 Early Termination Mechanism**
-**Current Challenge**: Execution time remains constant regardless of use case, indicating all servers are checked regardless of early findings.
-
-**Proposed Solutions**:
-- Implement **shared state** for early termination signals
-- Use **atomic counters** for thread-safe occurrence tracking  
-- Apply **producer-consumer pattern** for dynamic workload distribution
-- Implement **timeout mechanisms** for enhanced responsiveness
-
-#### **2.2 Advanced Parallelization Strategies**
-- **Fork-Join Framework**: Leverage Java's work-stealing algorithm
-- **CompletableFuture**: Asynchronous programming for better resource utilization
-- **Parallel Streams**: Higher-level abstraction for data parallelism
-
-### 🔗 **Lessons Learned**
-
-1. **Thread Management**: Proper lifecycle management is crucial for performance
-2. **Hardware Awareness**: Understanding CPU architecture limits optimal configuration  
-3. **Synchronization Overhead**: Balance between parallelism and coordination costs
-4. **Scalability Patterns**: Recognition of embarrassingly parallel problems enables effective optimization
-
+- 
 ---
-
-## 🔗 **Additional Resources & References**
-
-### 📚 **Documentation**
-- [Maven Exec Plugin Documentation](https://www.mojohaus.org/exec-maven-plugin/)
-- [Java Threading Tutorial](https://docs.oracle.com/javase/tutorial/essential/concurrency/)
-- [Java Runtime API](https://docs.oracle.com/javase/7/docs/api/java/lang/Runtime.html)
-
-### 📖 **Theoretical Concepts**
-- [Parallel Computing Concepts](https://en.wikipedia.org/wiki/Parallel_computing)
-- [Embarrassingly Parallel Problems](https://en.wikipedia.org/wiki/Embarrassingly_parallel)
-- [Amdahl's Law Explained](https://www.pugetsystems.com/labs/articles/Estimating-CPU-Performance-using-Amdahls-Law-619/)
-
-### 🛠️ **Tools & Monitoring**
-- [Java VisualVM Profiler](https://visualvm.github.io/)
-- [JConsole Monitoring](https://docs.oracle.com/javase/7/docs/technotes/guides/management/jconsole.html)
-
----
-
-## 📝 **Laboratory Report Metadata**
-
-| **Attribute** | **Value** |
-|:-------------:|:----------:|
-| **Course** | Arquitecturas de Software (ARSW) |
-| **Institution** | Escuela Colombiana de Ingeniería |
-| **Laboratory** | Multithreading & Parallelism Introduction |
-| **Focus** | BlackList Search Case Study |
-| **Language** | Java |
-| **Build Tool** | Maven |
-| **Monitoring** | jVisualVM |

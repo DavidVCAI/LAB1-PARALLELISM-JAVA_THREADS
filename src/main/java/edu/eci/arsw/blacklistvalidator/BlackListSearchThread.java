@@ -45,8 +45,8 @@ public class BlackListSearchThread extends Thread {
      */
     @Override
     public void run() {
-        System.out.println("Hilo " + Thread.currentThread().getName() +
-        " iniciado - Revisando servidores [" + startIndex + " - " + endIndex + "]");
+        System.out.println("Thread " + Thread.currentThread().getName() +
+        "Started - Checking servers [" + startIndex + " - " + endIndex + "]");
 
         for (int i = startIndex; i <= endIndex; i++) {
 
@@ -54,13 +54,13 @@ public class BlackListSearchThread extends Thread {
                 blackListOccurrences.add(i);
                 occurrencesFound++;
 
-                System.out.println("Hilo " + Thread.currentThread().getName() +
-                " encontró IP en blacklist #" + i);
+                System.out.println("Thread " + Thread.currentThread().getName() +
+                "Found IP on blacklist #" + i);
             }
         }
 
         System.out.println("Hilo " + Thread.currentThread().getName() +
-            " terminado - Encontradas " + occurrencesFound + " ocurrencias");
+            "Finished - Found " + occurrencesFound + " occurrences");
     }
 
     /**

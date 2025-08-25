@@ -120,9 +120,9 @@ public class CountThreadsMain {
         CountThread thirdThread = new CountThread(THIRD_RANGE_START, THIRD_RANGE_END);
 
         // Set descriptive names for thread identification
-        firstThread.setName("SEQUENTIAL-THREAD-A[" + FIRST_RANGE_START + "-" + FIRST_RANGE_END + "]");
-        secondThread.setName("SEQUENTIAL-THREAD-B[" + SECOND_RANGE_START + "-" + SECOND_RANGE_END + "]");
-        thirdThread.setName("SEQUENTIAL-THREAD-C[" + THIRD_RANGE_START + "-" + THIRD_RANGE_END + "]");
+        firstThread.setName("Sequential-Thread-A [" + FIRST_RANGE_START + "-" + FIRST_RANGE_END + "]");
+        secondThread.setName("Sequential-Thread-B [" + SECOND_RANGE_START + "-" + SECOND_RANGE_END + "]");
+        thirdThread.setName("Sequential-Thread-C [" + THIRD_RANGE_START + "-" + THIRD_RANGE_END + "]");
 
         System.out.println("Starting sequential execution...");
         System.out.println("Thread A: Range [" + FIRST_RANGE_START + "-" + FIRST_RANGE_END + "]");

@@ -33,7 +33,7 @@ public class CountThread extends Thread {
     @Override
     public void run() {
         for (int i = startNumber; i <= endNumber; i++) {
-        System.out.println("THREAD " + Thread.currentThread().getName() + ": " + i);
+        System.out.println("Thread " + Thread.currentThread().getName() + ": " + i);
         }
     }
 }
