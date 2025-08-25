@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package edu.eci.arsw.blacklistvalidator;
 
 import edu.eci.arsw.spamkeywordsdatasource.HostBlacklistsDataSourceFacade;
@@ -12,8 +7,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * Validator class for checking IP addresses against multiple blacklist servers
  *
- * @author hcadavid
+ * @author hcadavid, David Velásquez, Jesús Pinzón
+ * @version 2.0
+ * @since 2025-08-18
  */
 public class HostBlackListsValidator {
 
@@ -33,20 +31,16 @@ public class HostBlackListsValidator {
     public List<Integer> checkHost(String ipaddress) {
 
         LinkedList<Integer> blackListOcurrences = new LinkedList<>();
-
         int ocurrencesCount = 0;
 
         HostBlacklistsDataSourceFacade skds = HostBlacklistsDataSourceFacade.getInstance();
-
         int checkedListsCount = 0;
 
         for (int i = 0; i < skds.getRegisteredServersCount() && ocurrencesCount < BLACK_LIST_ALARM_COUNT; i++) {
             checkedListsCount++;
 
             if (skds.isInBlackListServer(i, ipaddress)) {
-
                 blackListOcurrences.add(i);
-
                 ocurrencesCount++;
             }
         }
@@ -64,14 +58,13 @@ public class HostBlackListsValidator {
     }
 
     /**
-     * Check the given host's IP address in all the available black lists using N
-     * threads,
+     * Check the given host's IP address in all the available black lists using N threads,
      * and report it as NOT Trustworthy when such IP was reported in at least
      * BLACK_LIST_ALARM_COUNT lists, or as Trustworthy in any other case.
      * 
-     * @param ipaddress suspicious host's IP address.
+     * @param ipaddress suspicious host's IP address
      * @param N         number of threads to use for parallel search
-     * @return Blacklists numbers where the given host's IP address was found.
+     * @return          Blacklists numbers where the given host's IP address was found
      */
     public List<Integer> checkHost(String ipaddress, int N) {
 
@@ -178,5 +171,4 @@ public class HostBlackListsValidator {
     }
 
     private static final Logger LOG = Logger.getLogger(HostBlackListsValidator.class.getName());
-
 }
